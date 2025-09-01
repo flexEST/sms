@@ -1,34 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Phone Login Test</title>
-  <!-- Firebase SDK -->
+  <title>Firebase Phone Auth Test</title>
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-auth.js"></script>
 </head>
 <body>
-  <h2>Login with Phone</h2>
+  <h2>Firebase Phone Auth Test</h2>
 
-  <div id="step1">
-    <input type="text" id="phone" placeholder="+994501234567">
-    <div id="recaptcha-container"></div>
-    <button onclick="sendOTP()">Send OTP</button>
-    <p style="color: gray;">Use test number +994501234567 → OTP: 123456</p>
-  </div>
+  <input id="phone" placeholder="+994501234567">
+  <div id="recaptcha-container"></div>
+  <button onclick="sendOTP()">Send OTP</button>
 
-  <div id="step2" style="display:none;">
-    <input type="text" id="otp" placeholder="Enter OTP">
-    <button onclick="verifyOTP()">Verify OTP</button>
-  </div>
-
-  <div id="welcome" style="display:none;">
-    <h3>✅ Welcome! You are logged in.</h3>
-  </div>
+  <br><br>
+  <input id="otp" placeholder="Enter OTP" style="display:none">
+  <button onclick="verifyOTP()" style="display:none">Verify OTP</button>
 
   <script>
-    // ===== Firebase Config =====
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDf5GBIgHmdjgbWx8tIEAPL6sMWAH6CQJ4",
       authDomain: "sms-test-670f1.firebaseapp.com",
@@ -40,43 +31,51 @@
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // Step 1: Send OTP
-    function sendOTP() {
-      const phoneNumber = document.getElementById("phone").value;
+    // Test number (configure in Firebase Console under Phone Auth > Test numbers)
+    const TEST_NUMBER = "+994501234567";
+    const TEST_CODE = "123456";
 
+    function sendOTP() {
+      const phone = document.getElementById("phone").value;
+
+      // If using test number, skip sending real SMS
+      if (phone === TEST_NUMBER) {
+        alert("Test number detected. Use code: " + TEST_CODE);
+        document.getElementById("otp").style.display = "inline";
+        document.querySelector("button[onclick='verifyOTP()']").style.display = "inline";
+        return;
+      }
+
+      // Invisible reCAPTCHA
       window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
         "recaptcha-container",
         { size: "invisible" },
         auth
       );
 
-      auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
-        .then((confirmationResult) => {
+      auth.signInWithPhoneNumber(phone, window.recaptchaVerifier)
+        .then(confirmationResult => {
           window.confirmationResult = confirmationResult;
-          document.getElementById("step1").style.display = "none";
-          document.getElementById("step2").style.display = "block";
-          alert("OTP sent! Enter the code now.");
+          document.getElementById("otp").style.display = "inline";
+          document.querySelector("button[onclick='verifyOTP()']").style.display = "inline";
+          alert("OTP sent!");
         })
-        .catch((error) => {
-          console.error(error);
-          alert("Error sending OTP: " + error.message);
-        });
+        .catch(error => console.error(error));
     }
 
-    // Step 2: Verify OTP
     function verifyOTP() {
       const code = document.getElementById("otp").value;
+
+      // Test number verification
+      if (document.getElementById("phone").value === TEST_NUMBER && code === TEST_CODE) {
+        alert("Logged in successfully with test number!");
+        return;
+      }
+
+      // Real OTP verification
       window.confirmationResult.confirm(code)
-        .then((result) => {
-          const user = result.user;
-          console.log("Logged in user:", user);
-          document.getElementById("step2").style.display = "none";
-          document.getElementById("welcome").style.display = "block";
-        })
-        .catch((error) => {
-          console.error(error);
-          alert("Invalid OTP: " + error.message);
-        });
+        .then(result => alert("Logged in successfully!"))
+        .catch(error => console.error(error));
     }
   </script>
 </body>
