@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Firebase Phone Auth Test</title>
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs must be first -->
   <script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-auth.js"></script>
 </head>
@@ -19,7 +19,11 @@
   <button onclick="verifyOTP()" style="display:none">Verify OTP</button>
 
   <script>
-    // Your Firebase config
+    // Test number (declare first!)
+    const TEST_NUMBER = "+994501234567";
+    const TEST_CODE = "123456";
+
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyDf5GBIgHmdjgbWx8tIEAPL6sMWAH6CQJ4",
       authDomain: "sms-test-670f1.firebaseapp.com",
@@ -31,14 +35,10 @@
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
 
-    // Test number (configure in Firebase Console under Phone Auth > Test numbers)
-    const TEST_NUMBER = "+994501234567";
-    const TEST_CODE = "123456";
-
     function sendOTP() {
       const phone = document.getElementById("phone").value;
 
-      // If using test number, skip sending real SMS
+      // Test number shortcut
       if (phone === TEST_NUMBER) {
         alert("Test number detected. Use code: " + TEST_CODE);
         document.getElementById("otp").style.display = "inline";
