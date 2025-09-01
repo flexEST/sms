@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Phone Login with Firebase</title>
+  <title>Firebase Phone Login Test</title>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.15.0/firebase-auth.js"></script>
@@ -15,6 +15,7 @@
     <input type="text" id="phone" placeholder="+994501234567">
     <div id="recaptcha-container"></div>
     <button onclick="sendOTP()">Send OTP</button>
+    <p style="color: gray;">Use test number +994501234567 → OTP: 123456</p>
   </div>
 
   <div id="step2" style="display:none;">
@@ -27,16 +28,11 @@
   </div>
 
   <script>
-    // ====== Replace these with your Firebase project info ======
+    // ===== Firebase Config =====
     const firebaseConfig = {
-      apiKey: "
-AIzaSyDf5GBIgHmdjgbWx8tIEAPL6sMWAH6CQJ4",
-      authDomain: "
-sms-test-670f1
-
-.firebaseapp.com",
-      projectId: "
-sms-test-670f1",
+      apiKey: "AIzaSyDf5GBIgHmdjgbWx8tIEAPL6sMWAH6CQJ4",
+      authDomain: "sms-test-670f1.firebaseapp.com",
+      projectId: "sms-test-670f1",
       appId: "1:24601695638:web:778230010ca6c528c279b7"
     };
 
@@ -59,7 +55,7 @@ sms-test-670f1",
           window.confirmationResult = confirmationResult;
           document.getElementById("step1").style.display = "none";
           document.getElementById("step2").style.display = "block";
-          alert("OTP sent! Check your phone.");
+          alert("OTP sent! Enter the code now.");
         })
         .catch((error) => {
           console.error(error);
