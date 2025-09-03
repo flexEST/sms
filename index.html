@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login with Your Phone</title>
+    <title>Phone Login Demo</title>
     <style>
         * {
             box-sizing: border-box;
@@ -106,6 +106,15 @@
             color: #666;
             margin-top: 5px;
         }
+        .demo-note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -118,7 +127,7 @@
             <div id="step-1">
                 <div class="input-group">
                     <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" placeholder="+447123456789" required>
+                    <input type="tel" id="phone" placeholder="+1234567890" required>
                 </div>
                 <button onclick="sendCode()">Send Verification Code</button>
             </div>
@@ -135,19 +144,17 @@
 
             <!-- Messages -->
             <div id="message" class="message"></div>
+            
+            <!-- Demo Note -->
+            <div class="demo-note">
+                <strong>Demo Mode:</strong> Codes are shown on screen and logged to console. 
+                No actual SMS is sent.
+            </div>
         </div>
     </div>
 
     <script>
-        // >>>>>>>>>> CONFIGURATION - REPLACE THESE VALUES <<<<<<<<<<
-        const config = {
-            accountSid: "AC0eb95f311e1764627245d71f653de943",      // Replace with your Twilio SID
-            authToken: "5dcbaa209aff5f291af771b656721f46",        // Replace with your Twilio Auth Token
-            twilioPhoneNumber: "+994708635805" // Replace with your Twilio phone number (e.g., "+14155238901")
-        };
-        // >>>>>>>>>> CONFIGURATION END <<<<<<<<<<
-
-        const API_BASE_URL = 'http://localhost:3000'; // Your Node.js server address
+        let generatedCode = '';
         let countdownInterval;
 
         function showMessage(text, isSuccess) {
@@ -155,6 +162,13 @@
             messageEl.textContent = text;
             messageEl.className = isSuccess ? 'message success' : 'message error';
             messageEl.style.display = 'block';
+            
+            // Auto-hide success messages after 3 seconds
+            if (isSuccess) {
+                setTimeout(() => {
+                    messageEl.style.display = 'none';
+                }, 3000);
+            }
         }
 
         function hideMessage() {
@@ -165,6 +179,9 @@
             const countdownEl = document.getElementById('countdown');
             let timeLeft = duration;
             clearInterval(countdownInterval);
+            
+            // Reset styles
+            countdownEl.style.color = "#666";
 
             countdownInterval = setInterval(() => {
                 const minutes = Math.floor(timeLeft / 60);
@@ -176,104 +193,107 @@
                     clearInterval(countdownInterval);
                     countdownEl.textContent = "Code expired!";
                     countdownEl.style.color = "#dc3545";
+                    generatedCode = ''; // Invalidate the code
                 }
             }, 1000);
         }
 
-        async function sendCode() {
+        function sendCode() {
             hideMessage();
             const phoneNumber = document.getElementById('phone').value.trim();
-
+            
             if (!phoneNumber) {
                 showMessage('Please enter your phone number.', false);
                 return;
             }
 
+            // Basic phone number validation
+            if (!phoneNumber.startsWith('+')) {
+                showMessage('Please include country code (e.g., +1 for US)', false);
+                return;
+            }
+
+            // Generate a random 6-digit code
+            generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+            
             // Show loading state
             const sendBtn = document.querySelector('#step-1 button');
             sendBtn.disabled = true;
             sendBtn.textContent = 'Sending...';
 
-            try {
-                // 1. Ask our server to generate and store a code
-                const response = await fetch(`${API_BASE_URL}/send-login-code`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) throw new Error(result.error);
-
-                // 2. If server OK, use Twilio API *directly from the browser* to send SMS
-                const twilioResponse = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${config.accountSid}/Messages.json`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Basic ' + btoa(config.accountSid + ":" + config.authToken),
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        To: phoneNumber,
-                        From: config.twilioPhoneNumber,
-                        Body: `Your verification code is: ${result.code}` // Server sends the code back in the response
-                    })
-                });
-
-                const twilioResult = await twilioResponse.json();
-                if (twilioResponse.status !== 201) throw new Error(twilioResult.message || 'Failed to send SMS');
-
-                // SUCCESS!
-                showMessage('Verification code sent successfully!', true);
+            // Simulate network delay
+            setTimeout(() => {
+                // Show the code on screen and in console
+                showMessage(`Demo code: ${generatedCode} (Also check console)`, true);
+                console.log(`📲 Demo SMS for ${phoneNumber}: Your verification code is ${generatedCode}`);
+                
+                // Move to next step
                 document.getElementById('step-1').style.display = 'none';
                 document.getElementById('step-2').style.display = 'block';
                 startCountdown(300); // 5 minute countdown
 
-            } catch (error) {
-                console.error("Send Error:", error);
-                showMessage(error.message || 'Failed to send code. Please try again.', false);
-            } finally {
+                // Reset button
                 sendBtn.disabled = false;
                 sendBtn.textContent = 'Send Verification Code';
-            }
+                
+                // Auto-focus the code input
+                document.getElementById('code').focus();
+            }, 1500);
         }
 
-        async function verifyCode() {
+        function verifyCode() {
             hideMessage();
-            const phoneNumber = document.getElementById('phone').value.trim();
             const code = document.getElementById('code').value.trim();
-
-            if (!code || code.length !== 6) {
-                showMessage('Please enter the 6-digit code.', false);
+            const verifyBtn = document.querySelector('#step-2 button');
+            
+            if (!code) {
+                showMessage('Please enter the verification code.', false);
                 return;
             }
-
-            const verifyBtn = document.querySelector('#step-2 button');
+            
             verifyBtn.disabled = true;
             verifyBtn.textContent = 'Verifying...';
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/verify-login-code`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber, code })
-                });
+            // Simulate verification delay
+            setTimeout(() => {
+                if (code === generatedCode) {
+                    showMessage('✅ Login successful! Welcome!', true);
+                    verifyBtn.textContent = 'Success!';
+                    verifyBtn.style.background = '#28a745';
+                    
+                    // Simulate redirect after success
+                    setTimeout(() => {
+                        alert('🎉 Login complete! This would redirect to your dashboard in a real app.');
+                        resetForm();
+                    }, 2000);
+                    
+                } else {
+                    showMessage('❌ Invalid code. Please try again.', false);
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Verify & Login';
+                }
+            }, 1000);
+        }
 
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error);
-
-                // LOGIN SUCCESS!
-                showMessage('✅ Login successful! Welcome!', true);
-                verifyBtn.textContent = 'Redirecting...';
-                // In a real app, you would redirect the user here
-                // window.location.href = "/dashboard";
-
-            } catch (error) {
-                showMessage(error.message, false);
-            } finally {
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = 'Verify & Login';
-            }
+        function resetForm() {
+            // Reset everything
+            document.getElementById('step-1').style.display = 'block';
+            document.getElementById('step-2').style.display = 'none';
+            document.getElementById('phone').value = '';
+            document.getElementById('code').value = '';
+            generatedCode = '';
+            clearInterval(countdownInterval);
+            hideMessage();
+            
+            // Reset button styles
+            const verifyBtn = document.querySelector('#step-2 button');
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = 'Verify & Login';
+            verifyBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            
+            // Reset countdown
+            document.getElementById('countdown').textContent = 'Code expires in: 5:00';
+            document.getElementById('countdown').style.color = '#666';
         }
 
         // Allow submitting forms by pressing "Enter"
@@ -283,6 +303,9 @@
         document.getElementById('code').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') verifyCode();
         });
+
+        // Initialize
+        hideMessage();
     </script>
 </body>
 </html>
